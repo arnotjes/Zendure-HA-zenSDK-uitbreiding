@@ -634,6 +634,18 @@ views:
                 show_state: true
                 show_icon: true
                 color: var(--accent-color)
+                entity: sensor.pv_naar_net
+                icon: mdi:transmission-tower-export
+                visibility:
+                  - condition: numeric_state
+                    entity: sensor.pv_naar_net
+                    above: 0
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: var(--accent-color)
                 entity: sensor.zendure_2400_ac_pv_import_dagelijks
                 tap_action:
                   action: more-info
@@ -743,6 +755,23 @@ views:
                   in_brush: true
                   in_header: false
                   in_legend: false
+              - entity: sensor.pv_naar_net
+                name: Naar Net
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                opacity: 0.35
+                stroke_width: 0
+                extend_to: now
+                color: '#039be5'
+                float_precision: 0
+                yaxis_id: energy
+                show:
+                  in_brush: true
+                  in_header: false
+                  in_legend: false
             apex_config:
               tooltip:
                 x:
@@ -795,6 +824,7 @@ views:
                 state: 'on'
           - type: entities
             entities:
+              - entity: sensor.pv_power
               - entity: sensor.huis_verbruik
               - entity: sensor.net_naar_accu
               - entity: sensor.accu_naar_net
@@ -1449,6 +1479,86 @@ views:
               - condition: time
                 after: '13:30:00'
                 before: '24:00:00'
+          - type: custom:apexcharts-card
+            cache: true
+            stacked: true
+            update_interval: 5sec
+            span:
+              start: day
+            header:
+              show: true
+              show_states: true
+              title: Helaas pindakaas
+            graph_span: 1d
+            series:
+              - entity: sensor.p1_meter_3c39e724c2d8_total_power_import
+                name: Helaas pindakaas
+                group_by:
+                  func: diff
+                  duration: 1h
+                type: column
+                stroke_width: 0
+                opacity: 1
+                extend_to: now
+                color: '#f1b605'
+                float_precision: 5
+                yaxis_id: energy
+                show:
+                  in_header: false
+              - entity: sensor.p1_meter_3c39e724c2d8_total_power_import
+                yaxis_id: header_only
+                name: Vandaag (import)
+                float_precision: 3
+                statistics:
+                  period: day
+                  type: change
+                  align: start
+                show:
+                  legend_value: true
+                  in_header: true
+                  in_chart: false
+            apex_config:
+              toolbar:
+                show: true
+                tools:
+                  download: true
+                  selection: true
+                  zoom: true
+                  zoomin: true
+                  zoomout: true
+                  pan: true
+              tooltip:
+                x:
+                  format: HH:mm:ss
+                  show: false
+              xaxis:
+                labels:
+                  show: false
+                  style:
+                    colors: grey
+                axisTicks:
+                  show: false
+                axisBorder:
+                  color: '#616269'
+              yaxis:
+                - title:
+                    text: ''
+                  decimalsInFloat: 3
+                  labels:
+                    style:
+                      colors: '#7b7c83'
+              grid:
+                strokeDashArray: 0
+                borderColor: rgb(52,52,52)
+                show: true
+              chart:
+                height: 200px
+              legend:
+                show: false
+              markers:
+                size: 0
+                hover:
+                  size: 0
         visibility:
           - condition: state
             entity: input_boolean.dynamisch_tonen_op_dashboard
