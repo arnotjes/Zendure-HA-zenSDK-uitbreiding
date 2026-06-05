@@ -811,7 +811,7 @@ views:
                 formatter: |
                   EVAL:function(seriesName, opts) {
                     // filter series die niet in de legenda moeten
-                    if(seriesName === "Naar Batterij" || seriesName === "Naar Huis") return "";
+                    if(seriesName === "Naar Batterij" || seriesName === "Naar Huis" || seriesName === "Naar Net") return "";
                     return seriesName;
                   }
               markers:
@@ -1479,86 +1479,6 @@ views:
               - condition: time
                 after: '13:30:00'
                 before: '24:00:00'
-          - type: custom:apexcharts-card
-            cache: true
-            stacked: true
-            update_interval: 5sec
-            span:
-              start: day
-            header:
-              show: true
-              show_states: true
-              title: Helaas pindakaas
-            graph_span: 1d
-            series:
-              - entity: sensor.p1_meter_3c39e724c2d8_total_power_import
-                name: Helaas pindakaas
-                group_by:
-                  func: diff
-                  duration: 1h
-                type: column
-                stroke_width: 0
-                opacity: 1
-                extend_to: now
-                color: '#f1b605'
-                float_precision: 5
-                yaxis_id: energy
-                show:
-                  in_header: false
-              - entity: sensor.p1_meter_3c39e724c2d8_total_power_import
-                yaxis_id: header_only
-                name: Vandaag (import)
-                float_precision: 3
-                statistics:
-                  period: day
-                  type: change
-                  align: start
-                show:
-                  legend_value: true
-                  in_header: true
-                  in_chart: false
-            apex_config:
-              toolbar:
-                show: true
-                tools:
-                  download: true
-                  selection: true
-                  zoom: true
-                  zoomin: true
-                  zoomout: true
-                  pan: true
-              tooltip:
-                x:
-                  format: HH:mm:ss
-                  show: false
-              xaxis:
-                labels:
-                  show: false
-                  style:
-                    colors: grey
-                axisTicks:
-                  show: false
-                axisBorder:
-                  color: '#616269'
-              yaxis:
-                - title:
-                    text: ''
-                  decimalsInFloat: 3
-                  labels:
-                    style:
-                      colors: '#7b7c83'
-              grid:
-                strokeDashArray: 0
-                borderColor: rgb(52,52,52)
-                show: true
-              chart:
-                height: 200px
-              legend:
-                show: false
-              markers:
-                size: 0
-                hover:
-                  size: 0
         visibility:
           - condition: state
             entity: input_boolean.dynamisch_tonen_op_dashboard
@@ -3035,6 +2955,14 @@ views:
                 name: Minimale Spread
               - entity: input_boolean.dynamisch_15_minuten
                 name: 15 Minuten Tarieven Actief
+          - type: heading
+            icon: ''
+            heading_style: title
+            heading: Configuratie (Kostprijs)
+          - type: entities
+            entities:
+              - entity: input_number.accu_aanschafprijs
+                name: Aanschafprijs Accu
           - type: heading
             icon: ''
             heading_style: title
