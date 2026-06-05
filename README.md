@@ -12,7 +12,7 @@ Leeg laten = werkt zoals altijd met Zendure eigen sensoren.
 ### 2. Accu Kostprijs & Besparing
 Elke minuut wordt bijgehouden:
 - Laden van net → kostprijs stijgt (nordpool prijs)
-- Laden van PV → gratis, kostprijs stijgt niet
+- Laden van PV → kostprijs stijgt (export prijs)
 - Ontladen → kostprijs daalt proportioneel
 
 Nieuwe sensoren:
