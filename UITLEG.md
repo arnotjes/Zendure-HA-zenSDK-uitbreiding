@@ -26,14 +26,16 @@ De bestaande methode telt laadkosten direct af bij het laden.
 Bij gedeeltelijke cycli geeft dit een vertekend beeld.
 
 **De nieuwe aanpak — elke minuut:**
-- Laden van net → kostprijs stijgt (nordpool prijs)
-- Laden van PV → kostprijs stijgt NIET (gratis)
+- Laden van net → kostprijs stijgt (nordpool inkoopprijs)
+- Laden van PV → kostprijs stijgt met de **terugleverprijs** (opportuniteitskosten: die stroom had je anders kunnen terugleveren aan het net)
 - Ontladen → kostprijs daalt proportioneel
 - Accu leeg → kostprijs reset naar 0
 
 **Voorbeeld:**
-4 kWh net (€0,20) + 4 kWh PV (gratis) = 8 kWh voor €0,80
-→ Gemiddelde kostprijs: **€0,10/kWh**
+4 kWh net (€0,20) + 4 kWh PV (terugleverprijs €0,15) = 8 kWh voor €1,40
+→ Gemiddelde kostprijs: **€0,175/kWh**
+
+> ⚠️ PV naar de accu is **niet gratis**. Je loopt de terugleverprijs mis voor elke kWh die je opslaat in plaats van teruglevert. Zie hieronder hoe je de terugleverprijs correct instelt.
 
 ---
 
@@ -57,10 +59,14 @@ Bij gedeeltelijke cycli geeft dit een vertekend beeld.
 
 ## Terugleverprijs
 
-De nordpool all-in prijs (inkoop) verschilt van de verkoopprijs
-(~€0,13-0,15 verschil in NL).
-Stel een aparte sensor in via `input_text.accu_teruglever_sensor`.
-Leeg laten = valt terug op de all-in nordpool prijs.
+De nordpool all-in inkoopprijs verschilt doorgaans van de terugleverprijs (~€0,13-0,15 verschil in NL).
+
+**Is jouw terugleverprijs anders dan de inkoopprijs?**
+Maak dan een aparte sensor aan in de **Nordpool integratie** met de correcte terugleverprijs en voeg deze toe via `input_text.accu_teruglever_sensor` (Configuratiekaart → Dynamisch Teruglever Sensor).
+
+> Voorbeeld: bij sommige leveranciers is de terugleverprijs de kale Nordpool spotprijs zonder opslag en belasting. Maak dan een extra Nordpool sensor aan zonder toeslag en gebruik die als teruglever sensor.
+
+> ℹ️ **Niet ingevuld?** Dan gebruikt het systeem automatisch de Nordpool inkoopprijs als terugleverprijs. Dit is correct als jouw leverancier dezelfde prijs hanteert voor inkoop en teruglevering (bijv. Zonneplan).
 
 ---
 
@@ -72,4 +78,5 @@ Leeg laten = valt terug op de all-in nordpool prijs.
 4. Vul in de configuratiekaart in:
    - Nordpool sensor
    - PV sensor (optioneel)
-   - Teruglever sensor (optioneel)
+   - Teruglever sensor (optioneel, zie boven)
+   - Aanschafprijs accu (Configuratie → Kostprijs)
