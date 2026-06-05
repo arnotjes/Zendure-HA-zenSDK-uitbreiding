@@ -280,6 +280,15 @@ input_number:
     mode: box
     unit_of_measurement: "€"
 
+  accu_aanschafprijs:
+    name: Accu Aanschafprijs
+    icon: mdi:currency-eur
+    min: 0
+    max: 10000
+    step: 1
+    mode: box
+    unit_of_measurement: "€"
+
 input_datetime:
   zendure_gielz_automatisering_laatste_keer_uitgevoerd:
     name: Zendure Gielz Automatisering Laatste Keer Uitgevoerd
@@ -1693,9 +1702,11 @@ template:
         unique_id: accu_laadkosten_per_moment
         unit_of_measurement: "€/h"
         state: >
-          {% set v = states('sensor.net_naar_accu') | float(0) %}
-          {% set p = states('sensor.dynamisch_nordpool') | float(0) %}
-          {{ (v / 1000 * p) | round(6) }}
+          {% set net = states('sensor.net_naar_accu') | float(0) %}
+          {% set pv  = states('sensor.pv_vermogen_naar_batterij') | float(0) %}
+          {% set p_net   = states('sensor.dynamisch_nordpool') | float(0) %}
+          {% set p_terug = states('sensor.accu_teruglevertarief') | float(0) %}
+          {{ (net / 1000 * p_net + pv / 1000 * p_terug) | round(6) }}
 
       - name: "Accu Opbrengst Per Moment"
         unique_id: accu_opbrengst_per_moment
@@ -1811,7 +1822,8 @@ template:
         unit_of_measurement: "%"
         state: >
           {% set totaal = states('sensor.accu_netto_besparing_gecorrigeerd') | float(0) %}
-          {{ ((totaal / 2300) * 100) | round(2) }}
+          {% set aanschaf = states('input_number.accu_aanschafprijs') | float(0) %}
+          {{ ((totaal / aanschaf) * 100) | round(2) if aanschaf > 0 else 0 }}
 
 rest:
   - resource_template: "http://{{ states('input_text.zendure_2400_ac_ip_adres') }}/properties/report"
