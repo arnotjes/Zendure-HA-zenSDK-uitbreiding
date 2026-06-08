@@ -1,0 +1,653 @@
+views:
+  - type: sections
+    max_columns: 3
+    title: Energie Inzicht
+    path: energie_inzicht
+    icon: mdi:currency-eur
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energie Stromen
+            heading_style: title
+            icon: ''
+            badges:
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: sensor.zendure_2400_ac_vermogen_aansturing
+                color: '#01a180'
+                icon: mdi:battery
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: sensor.huis_verbruik
+                color: '#e05050'
+                tap_action:
+                  action: more-info
+                icon: mdi:home
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: sensor.pv_aansturing_vermogen
+                color: '#f0a500'
+                tap_action:
+                  action: more-info
+                icon: mdi:solar-power
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: sensor.p1_aansturing_vermogen
+                color: blue
+                tap_action:
+                  action: more-info
+                icon: mdi:transmission-tower
+          - type: custom:apexcharts-card
+            cache: true
+            update_interval: 1min
+            stacked: false
+            header:
+              show: true
+              show_states: false
+              title: ''
+            graph_span: 1d
+            span:
+              start: day
+            series:
+              - entity: sensor.pv_aansturing_vermogen
+                name: PV Opwek
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.3
+                extend_to: now
+                color: '#f0a500'
+                float_precision: 0
+                yaxis_id: energy
+              - entity: sensor.huis_verbruik
+                name: Huis Verbruik
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: line
+                stroke_width: 2
+                opacity: 0.3
+                extend_to: now
+                color: '#e05050'
+                float_precision: 0
+                yaxis_id: energy
+              - entity: sensor.zendure_2400_ac_vermogen_aansturing
+                name: Batterij
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                transform: return -x;
+                stroke_width: 2
+                opacity: 0.35
+                extend_to: now
+                color: '#01a180'
+                float_precision: 0
+                yaxis_id: energy
+              - entity: sensor.p1_aansturing_vermogen
+                name: Net
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: line
+                stroke_width: 1
+                opacity: 0.2
+                extend_to: now
+                color: '#039be5'
+                float_precision: 0
+                yaxis_id: energy
+            apex_config:
+              tooltip:
+                x:
+                  format: HH:mm
+                  show: false
+              xaxis:
+                labels:
+                  show: false
+                axisTicks:
+                  show: false
+                axisBorder:
+                  color: color-mix(in srgb, var(--divider-color) 50%, transparent)
+              yaxis:
+                - id: energy
+                  title:
+                    text: ''
+                  decimalsInFloat: 0
+                  labels:
+                    show: false
+              grid:
+                strokeDashArray: 0
+                borderColor: color-mix(in srgb, var(--divider-color) 50%, transparent)
+                show: true
+              chart:
+                height: 300px
+                toolbar:
+                  autoSelected: pan
+                  show: true
+                  tools:
+                    download: false
+                    zoom: true
+                    zoomin: false
+                    zoomout: false
+                    pan: true
+                zoom:
+                  enabled: true
+                  autoScaleYaxis: true
+              legend:
+                show: true
+                floating: false
+                horizontalAlign: left
+              markers:
+                size: 0
+                hover:
+                  size: 0
+          - type: entities
+            title: Nu
+            entities:
+              - entity: sensor.pv_aansturing_vermogen
+                name: PV Opwek
+                icon: mdi:solar-power
+              - entity: sensor.pv_vermogen_naar_batterij
+                name: PV → Batterij
+                icon: mdi:battery-arrow-up
+              - entity: sensor.pv_vermogen_naar_huis
+                name: PV → Huis
+                icon: mdi:home-lightning-bolt
+              - entity: sensor.net_naar_accu
+                name: Net → Batterij
+                icon: mdi:transmission-tower
+              - entity: sensor.accu_naar_huis
+                name: Batterij → Huis
+                icon: mdi:home-battery
+              - entity: sensor.accu_naar_net
+                name: Batterij → Net
+                icon: mdi:transmission-tower-export
+              - entity: sensor.pv_naar_net
+                name: PV → Net
+                icon: mdi:solar-power-variant
+              - entity: sensor.huis_verbruik
+                name: Totaal Huis Verbruik
+                icon: mdi:home
+        column_span: 1
+      - type: grid
+        cards:
+          - type: heading
+            icon: ''
+            heading: PV
+            heading_style: title
+            badges:
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#f0a500'
+                entity: sensor.pv_doorvoer
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#01a180'
+                entity: sensor.pv_vermogen_naar_batterij
+                icon: mdi:battery
+                visibility:
+                  - condition: numeric_state
+                    entity: sensor.pv_vermogen_naar_batterij
+                    above: 0
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#e05050'
+                entity: sensor.pv_vermogen_naar_huis
+                icon: mdi:home
+                visibility:
+                  - condition: numeric_state
+                    entity: sensor.pv_vermogen_naar_huis
+                    above: 0
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#039be5'
+                entity: sensor.pv_naar_net
+                icon: mdi:transmission-tower-export
+                visibility:
+                  - condition: numeric_state
+                    entity: sensor.pv_naar_net
+                    above: 0
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: var(--accent-color)
+                entity: sensor.zendure_2400_ac_pv_import_dagelijks
+                tap_action:
+                  action: more-info
+          - type: custom:apexcharts-card
+            cache: true
+            update_interval: 15min
+            stacked: false
+            header:
+              show: true
+              show_states: false
+              title: ''
+            graph_span: 1d
+            span:
+              start: day
+            series:
+              - entity: sensor.pv_aansturing_vermogen
+                name: Totaal PV
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.3
+                extend_to: now
+                color: '#f0a500'
+                float_precision: 0
+                yaxis_id: energy
+                show:
+                  legend_value: false
+              - entity: sensor.pv_vermogen_naar_batterij
+                name: PV → Batterij
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.5
+                extend_to: now
+                color: '#01a180'
+                float_precision: 0
+                yaxis_id: energy
+                show:
+                  legend_value: false
+              - entity: sensor.pv_vermogen_naar_huis
+                name: PV → Huis
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.5
+                extend_to: now
+                color: '#e05050'
+                float_precision: 0
+                yaxis_id: energy
+                show:
+                  legend_value: false
+              - entity: sensor.pv_naar_net
+                name: PV → Net
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.5
+                extend_to: now
+                color: '#039be5'
+                float_precision: 0
+                yaxis_id: energy
+                show:
+                  legend_value: false
+            apex_config:
+              tooltip:
+                x:
+                  format: HH:mm
+                  show: false
+              xaxis:
+                labels:
+                  show: false
+                axisTicks:
+                  show: false
+                axisBorder:
+                  color: color-mix(in srgb, var(--divider-color) 50%, transparent)
+              yaxis:
+                - id: energy
+                  min: 0
+                  title:
+                    text: ''
+                  decimalsInFloat: 0
+                  labels:
+                    style:
+                      colors: >-
+                        color-mix(in srgb, var(--primary-text-color) 75%,
+                        transparent)
+              grid:
+                strokeDashArray: 0
+                borderColor: color-mix(in srgb, var(--divider-color) 50%, transparent)
+                show: true
+              chart:
+                height: 300px
+                toolbar:
+                  autoSelected: pan
+                  show: true
+                  tools:
+                    download: false
+                    zoom: true
+                    zoomin: false
+                    zoomout: false
+                    pan: true
+                zoom:
+                  enabled: true
+                  autoScaleYaxis: true
+              legend:
+                show: true
+                floating: false
+                horizontalAlign: left
+              markers:
+                size: 0
+                hover:
+                  size: 0
+          - type: heading
+            icon: ''
+            heading: Accu
+            heading_style: title
+            badges:
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#e05050'
+                entity: sensor.accu_naar_huis
+                icon: mdi:home-battery
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                color: '#039be5'
+                entity: sensor.accu_naar_net
+                icon: mdi:transmission-tower-export
+                tap_action:
+                  action: more-info
+          - type: custom:apexcharts-card
+            cache: true
+            update_interval: 1min
+            header:
+              show: true
+              show_states: false
+              title: Accu Levering Vandaag
+            graph_span: 1d
+            span:
+              start: day
+            series:
+              - entity: sensor.accu_naar_huis
+                name: Accu → Huis
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.5
+                extend_to: now
+                color: '#e05050'
+                float_precision: 0
+              - entity: sensor.accu_naar_net
+                name: Accu → Net
+                show:
+                  legend_value: false
+                statistics:
+                  period: 5minute
+                  type: mean
+                  align: start
+                type: area
+                stroke_width: 2
+                opacity: 0.5
+                extend_to: now
+                color: '#039be5'
+                float_precision: 0
+            apex_config:
+              tooltip:
+                x:
+                  format: HH:mm
+                  show: false
+              xaxis:
+                labels:
+                  show: false
+              yaxis:
+                - title:
+                    text: W
+                  decimalsInFloat: 0
+                  labels:
+                    style:
+                      colors: >-
+                        color-mix(in srgb, var(--primary-text-color) 75%,
+                        transparent)
+              grid:
+                borderColor: color-mix(in srgb, var(--divider-color) 50%, transparent)
+              chart:
+                height: 200px
+              legend:
+                show: true
+                floating: false
+                horizontalAlign: left
+              markers:
+                size: 0
+          - type: entities
+            title: Vandaag
+            entities:
+              - entity: sensor.accu_laadkosten_vandaag
+                name: Laadkosten Vandaag
+                icon: mdi:currency-eur
+              - entity: sensor.accu_besparing_vandaag
+                name: Opbrengst Vandaag
+                icon: mdi:currency-eur
+              - entity: sensor.accu_netto_besparing_vandaag
+                name: Netto Besparing Vandaag
+                icon: mdi:cash-plus
+          - type: entities
+            title: Totaal (gecorrigeerd)
+            entities:
+              - entity: sensor.accu_laadkosten_gecorrigeerd
+                name: Laadkosten Totaal
+                icon: mdi:currency-eur
+              - entity: sensor.accu_opbrengst_gecorrigeerd
+                name: Opbrengst Totaal
+                icon: mdi:currency-eur
+              - entity: sensor.accu_netto_besparing_gecorrigeerd
+                name: Netto Besparing Totaal
+                icon: mdi:cash-plus
+              - entity: sensor.accu_terugverdien_percentage
+                name: Terugverdien
+                icon: mdi:percent
+        column_span: 1
+      - type: grid
+        cards:
+          - type: heading
+            heading: Kostprijs & Rendabiliteit
+            heading_style: title
+            icon: ''
+            badges:
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: binary_sensor.accu_rendabel_ontladen
+                color: '#01a180'
+                tap_action:
+                  action: more-info
+              - type: entity
+                show_state: true
+                show_icon: true
+                entity: binary_sensor.accu_rendabel_terugleveren
+                color: '#f0a500'
+                tap_action:
+                  action: more-info
+          - type: entities
+            title: Kostprijs Nu
+            entities:
+              - entity: sensor.accu_gemiddelde_kostprijs_opgeslagen
+                name: Gem. Kostprijs In Accu
+                icon: mdi:currency-eur
+              - entity: sensor.accu_kostprijs_per_kwh_uit
+                name: Kostprijs Per kWh Uit
+                icon: mdi:currency-eur
+              - entity: sensor.dynamisch_nordpool
+                name: Huidige Energieprijs
+                icon: mdi:cash
+              - entity: sensor.accu_teruglevertarief
+                name: Teruglevertarief
+                icon: mdi:cash-minus
+              - entity: sensor.accu_marge_per_kwh
+                name: Marge Per kWh (ontladen)
+                icon: mdi:cash-plus
+              - entity: sensor.accu_marge_teruglevering
+                name: Marge Teruglevering
+                icon: mdi:cash-minus
+              - entity: binary_sensor.accu_rendabel_ontladen
+                name: Rendabel Ontladen
+              - entity: binary_sensor.accu_rendabel_terugleveren
+                name: Rendabel Terugleveren
+          - type: entities
+            title: Accu Status
+            entities:
+              - entity: sensor.zendure_2400_ac_modus
+                name: Modus
+                icon: mdi:battery-sync
+              - entity: sensor.zendure_2400_ac_laadpercentage
+                name: Laadpercentage
+                icon: mdi:battery
+              - entity: sensor.accu_kwh_in_accu
+                name: kWh In Accu
+                icon: mdi:lightning-bolt
+              - entity: sensor.zendure_2400_ac_totale_capaciteit
+                name: Totale Capaciteit
+                icon: mdi:battery-high
+              - entity: sensor.zendure_2400_ac_indicatie_beschikbare_energie
+                name: Beschikbare Energie
+                icon: mdi:battery-arrow-down
+              - entity: sensor.zendure_2400_ac_rte_totaal
+                name: RTE Totaal
+                icon: mdi:percent
+              - entity: sensor.zendure_2400_ac_efficientie_export_24u_gemiddelde
+                name: Export Efficiëntie (24u)
+                icon: mdi:percent
+              - entity: sensor.zendure_2400_ac_efficientie_import_24u_gemiddelde
+                name: Import Efficiëntie (24u)
+                icon: mdi:percent
+        column_span: 1
+    cards: []
+  - type: sections
+    max_columns: 2
+    title: Configuratie
+    path: configuratie
+    icon: mdi:cog
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Verbinding
+            heading_style: title
+            icon: ''
+          - type: entities
+            entities:
+              - entity: input_text.zendure_2400_ac_ip_adres
+                name: Zendure IP-adres
+              - entity: input_text.homewizard_p1_ip_adres
+                name: Homewizard P1 IP-adres
+              - entity: input_text.afwijkende_p1_sensor
+                name: Afwijkende P1 Sensor
+              - entity: input_text.afwijkende_pv_sensor
+                name: Afwijkende PV Sensor
+          - type: heading
+            heading: Dynamisch & Kosten
+            heading_style: title
+            icon: ''
+          - type: entities
+            entities:
+              - entity: input_text.dynamisch_nordpool_sensor
+                name: Nordpool Sensor
+              - entity: input_text.accu_teruglever_sensor
+                name: Teruglever Sensor
+              - entity: input_boolean.dynamisch_15_minuten
+                name: 15 Minuten Tarieven
+              - entity: input_number.accu_aanschafprijs
+                name: Aanschafprijs Accu
+        column_span: 1
+      - type: grid
+        cards:
+          - type: heading
+            heading: Apparaat Info
+            heading_style: title
+            icon: ''
+          - type: entities
+            entities:
+              - entity: sensor.zendure_2400_ac_productserie
+                name: Productserie
+              - entity: sensor.zendure_2400_ac_serienummer
+                name: Serienummer
+              - entity: sensor.zendure_2400_ac_totale_capaciteit
+                name: Totale Capaciteit
+              - entity: sensor.zendure_2400_ac_signaalsterkte
+                name: Signaalsterkte
+              - entity: sensor.zendure_2400_ac_error
+                name: Foutmelding
+          - type: heading
+            heading: Versiebeheer
+            heading_style: title
+            icon: ''
+          - type: entities
+            entities:
+              - entity: sensor.zendure_energie_inzicht_versie
+                name: Versie in gebruik
+              - entity: sensor.github_zendure_ha_zensdk_uitbreiding_arnotjes
+                name: Versie op GitHub
+          - type: heading
+            heading: Statistieken Reset
+            heading_style: title
+            icon: ''
+          - type: entities
+            entities:
+              - type: button
+                name: Reset Statistieken
+                icon: mdi:restart
+                tap_action:
+                  action: perform-action
+                  perform_action: input_button.press
+                  confirmation:
+                    text: Weet je zeker dat je de statistieken wilt resetten?
+                  target:
+                    entity_id: input_button.accu_statistieken_reset
+              - type: button
+                name: Reset Terugverdien
+                icon: mdi:restore
+                tap_action:
+                  action: perform-action
+                  perform_action: input_button.press
+                  confirmation:
+                    text: >-
+                      Weet je zeker dat je de terugverdien statistieken wilt
+                      resetten?
+                  target:
+                    entity_id: input_button.accu_terugverdien_reset
+        column_span: 1
+    cards: []
