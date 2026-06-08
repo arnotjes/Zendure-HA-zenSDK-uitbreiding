@@ -1,0 +1,533 @@
+##############################################################################
+# Zendure Energie Inzicht Addon
+# Versie: 2026-06-06
+#
+# Gebruik dit bestand SAMEN met zendure_gielz1986_nl.yaml
+# Dit bestand bevat alleen de extra sensoren die Gielz niet heeft.
+#
+# Zet beide bestanden in je packages map:
+#   - zendure_gielz1986_nl.yaml  (Gielz origineel)
+#   - zendure_energie_inzicht_addon.yaml  (dit bestand)
+##############################################################################
+
+##############################################################################
+# EXTRA INVOERVELDEN (niet in Gielz)
+##############################################################################
+
+input_button:
+  accu_statistieken_reset:
+    name: Accu Statistieken Reset
+    icon: mdi:restart
+
+  accu_terugverdien_reset:
+    name: Accu Terugverdien Reset
+    icon: mdi:restore
+
+input_text:
+  afwijkende_pv_sensor:
+    name: Afwijkende PV Sensor
+    icon: mdi:solar-power
+    max: 250
+    mode: text
+
+  accu_teruglever_sensor:
+    name: Dynamisch Teruglever Sensor
+    icon: mdi:cash-minus
+    max: 250
+    mode: text
+
+input_number:
+  accu_laadkosten_offset:
+    name: Accu Laadkosten Offset
+    icon: mdi:currency-eur
+    min: 0
+    max: 100000
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "€"
+
+  accu_opbrengst_offset:
+    name: Accu Opbrengst Offset
+    icon: mdi:currency-eur
+    min: 0
+    max: 100000
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "€"
+
+  accu_netto_besparing_offset:
+    name: Accu Netto Besparing Offset
+    icon: mdi:currency-eur
+    min: 0
+    max: 100000
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "€"
+
+  accu_kostprijs_totaal:
+    name: Accu Kostprijs Totaal
+    icon: mdi:currency-eur
+    min: 0
+    max: 100
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "€"
+
+  accu_aanschafprijs:
+    name: Accu Aanschafprijs
+    icon: mdi:currency-eur
+    min: 0
+    max: 10000
+    step: 1
+    mode: box
+    unit_of_measurement: "€"
+
+##############################################################################
+# EXTRA SENSOREN (statistieken & integratie)
+##############################################################################
+
+sensor:
+  - platform: integration
+    name: "Accu Laadkosten Totaal"
+    unique_id: accu_laadkosten_totaal
+    source: sensor.accu_laadkosten_per_moment
+    round: 6
+    method: left
+    unit_time: h
+
+  - platform: integration
+    name: "Accu Opbrengst Totaal"
+    unique_id: accu_opbrengst_totaal
+    source: sensor.accu_opbrengst_per_moment
+    round: 6
+    method: left
+    unit_time: h
+
+  - platform: integration
+    name: "Accu Netto Besparing Totaal"
+    unique_id: accu_netto_besparing_totaal
+    source: sensor.accu_netto_besparing_per_moment
+    round: 6
+    method: left
+    unit_time: h
+
+##############################################################################
+# UTILITY METERS
+##############################################################################
+
+utility_meter:
+  accu_laadkosten_vandaag:
+    source: sensor.accu_laadkosten_totaal
+    name: Accu Laadkosten Vandaag
+    unique_id: accu_laadkosten_vandaag
+    cycle: daily
+
+  accu_besparing_vandaag:
+    source: sensor.accu_opbrengst_totaal
+    name: Accu Besparing Vandaag
+    unique_id: accu_besparing_vandaag
+    cycle: daily
+
+##############################################################################
+# TEMPLATE SENSOREN (alleen unieke, niet in Gielz)
+##############################################################################
+
+template:
+  - binary_sensor:
+      - name: "Accu Rendabel Ontladen"
+        unique_id: accu_rendabel_ontladen
+        state: >
+          {% set prijs = states('sensor.dynamisch_nordpool') | float(0) %}
+          {% set kostprijs = states('sensor.accu_kostprijs_per_kwh_uit') | float(0) %}
+          {{ prijs > 0 and prijs > kostprijs }}
+        icon: >
+          {% if is_state('binary_sensor.accu_rendabel_ontladen', 'on') %}
+            mdi:cash-plus
+          {% else %}
+            mdi:cash-remove
+          {% endif %}
+
+      - name: "Accu Rendabel Terugleveren"
+        unique_id: accu_rendabel_terugleveren
+        state: >
+          {% set teruglever = states('sensor.accu_teruglevertarief') | float(0) %}
+          {% set kostprijs = states('sensor.accu_kostprijs_per_kwh_uit') | float(0) %}
+          {{ teruglever > 0 and teruglever > kostprijs }}
+        icon: >
+          {% if is_state('binary_sensor.accu_rendabel_terugleveren', 'on') %}
+            mdi:transmission-tower-export
+          {% else %}
+            mdi:transmission-tower-off
+          {% endif %}
+
+  - sensor:
+      - name: "PV Aansturing Vermogen"
+        unique_id: PV_Aansturing_Vermogen
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        availability: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% set afwijkend_valid = afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+          {% set zendure_valid = states('sensor.zendure_2400_ac_vermogen_pv_totaal') not in ['unknown', 'unavailable', 'none'] %}
+          {{ afwijkend_valid or zendure_valid }}
+        state: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% if afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+            {{ states(afwijkend) | float(0) }}
+          {% else %}
+            {{ states('sensor.zendure_2400_ac_vermogen_pv_totaal') | float(0) }}
+          {% endif %}
+
+      - name: "PV Vermogen Naar Batterij"
+        unique_id: PV_Vermogen_Naar_Batterij
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        state: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% set extern = afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+          {% if extern %}
+            {% set pv = states('sensor.pv_aansturing_vermogen') | float(0) %}
+            {% set import = states('sensor.zendure_2400_ac_vermogen_import') | float(0) %}
+            {{ [import, pv] | min | round(1) }}
+          {% else %}
+            {{ states('sensor.zendure_2400_ac_vermogen_pv_naar_batterij') | float(0) }}
+          {% endif %}
+
+      - name: "PV Vermogen Naar Huis"
+        unique_id: PV_Vermogen_Naar_Huis
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        state: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% set extern = afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+          {% if extern %}
+            {% set pv = states('sensor.pv_aansturing_vermogen') | float(0) %}
+            {% set naar_batterij = states('sensor.pv_vermogen_naar_batterij') | float(0) %}
+            {% set naar_net = states('sensor.pv_naar_net') | float(0) %}
+            {{ [pv - naar_batterij - naar_net, 0] | max | round(1) }}
+          {% else %}
+            {{ states('sensor.zendure_2400_ac_vermogen_pv_naar_huis') | float(0) }}
+          {% endif %}
+
+      - name: "PV Doorvoer"
+        unique_id: PV_Doorvoer
+        icon: >
+          {% if states('sensor.pv_aansturing_vermogen') | float(0) > 0 %}
+            mdi:solar-power
+          {% else %}
+            mdi:solar-power-variant-outline
+          {% endif %}
+        state: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% set extern = afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+          {% if extern %}
+            {% set pv = states('sensor.pv_aansturing_vermogen') | float(0) %}
+            {{ 'PV Actief' if pv > 0 else 'PV Offline' }}
+          {% else %}
+            {{ states('sensor.zendure_2400_ac_pv_doorvoer') }}
+          {% endif %}
+
+      - name: "Accu Teruglevertarief"
+        unique_id: accu_teruglevertarief
+        unit_of_measurement: "€/kWh"
+        icon: mdi:cash-minus
+        state: >
+          {% set ingevuld = states('input_text.accu_teruglever_sensor') %}
+          {% if ingevuld | lower | regex_match('^sensor\\..+') and states(ingevuld) not in ['unknown', 'unavailable', 'none'] %}
+            {{ states(ingevuld) | float(0) }}
+          {% else %}
+            {{ states('sensor.dynamisch_nordpool') | float(0) }}
+          {% endif %}
+
+      - name: "Net Naar Accu"
+        unique_id: net_naar_accu
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set aansturing = states('sensor.zendure_2400_ac_vermogen_aansturing') | float(0) %}
+          {% set pv = states('sensor.pv_vermogen_naar_batterij') | float(0) %}
+          {% if aansturing > 0 %}
+            {{ [aansturing - pv, 0] | max | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Huis Verbruik"
+        unique_id: huis_verbruik
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set afwijkend = states('input_text.afwijkende_pv_sensor') %}
+          {% set extern = afwijkend | lower | regex_match('^sensor\\..+') and states(afwijkend) not in ['unknown', 'unavailable', 'none'] %}
+          {% set p1 = states('sensor.p1_aansturing_vermogen') | float(0) %}
+          {% set ontladen = states('sensor.zendure_2400_ac_vermogen_naar_huis') | float(0) %}
+          {% set net_naar_accu = states('sensor.net_naar_accu') | float(0) %}
+          {% if extern %}
+            {% set pv = states('sensor.pv_aansturing_vermogen') | float(0) %}
+            {% set pv_naar_bat = states('sensor.pv_vermogen_naar_batterij') | float(0) %}
+            {% set zendure_pv = states('sensor.zendure_2400_ac_vermogen_pv_naar_huis') | float(0) %}
+            {{ [p1 + pv - pv_naar_bat + ontladen + zendure_pv - net_naar_accu, 0] | max | round(0) }}
+          {% else %}
+            {% set pv_naar_huis = states('sensor.pv_vermogen_naar_huis') | float(0) %}
+            {{ [p1 + pv_naar_huis + ontladen - net_naar_accu, 0] | max | round(0) }}
+          {% endif %}
+
+      - name: "Accu Naar Huis"
+        unique_id: accu_naar_huis
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        state: >
+          {% set ontladen = states('sensor.zendure_2400_ac_vermogen_naar_huis') | float(0) %}
+          {% set pv_naar_huis = states('sensor.pv_vermogen_naar_huis') | float(0) %}
+          {% set huis = states('sensor.huis_verbruik') | float(0) %}
+          {% set p1 = states('sensor.p1_aansturing_vermogen') | float(0) %}
+          {% set net_naar_accu = states('sensor.net_naar_accu') | float(0) %}
+          {% if ontladen > 0 %}
+            {% set net_naar_huis = [p1 - net_naar_accu, 0] | max %}
+            {{ [[huis - pv_naar_huis - net_naar_huis, ontladen] | min, 0] | max | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Accu Naar Net"
+        unique_id: accu_naar_net
+        unit_of_measurement: "W"
+        state_class: measurement
+        device_class: power
+        state: >
+          {% set ontladen = states('sensor.zendure_2400_ac_vermogen_naar_huis') | float(0) %}
+          {% set naar_huis = states('sensor.accu_naar_huis') | float(0) %}
+          {% if ontladen > 0 %}
+            {{ [ontladen - naar_huis, 0] | max | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "PV Naar Net"
+        unique_id: pv_naar_net
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set export = [states('sensor.p1_aansturing_vermogen') | float(0) * -1, 0] | max %}
+          {% set accu_naar_net = states('sensor.accu_naar_net') | float(0) %}
+          {{ [export - accu_naar_net, 0] | max | round(0) }}
+
+      - name: "Accu kWh In Accu"
+        unique_id: accu_kwh_in_accu
+        unit_of_measurement: "kWh"
+        device_class: energy
+        icon: mdi:battery
+        state: >
+          {% set soc = states('sensor.zendure_2400_ac_laadpercentage') | float(0) %}
+          {% set cap = states('sensor.zendure_2400_ac_totale_capaciteit') | float(0) %}
+          {{ (soc / 100 * cap) | round(3) }}
+
+      - name: "Accu Gemiddelde Kostprijs Opgeslagen"
+        unique_id: accu_gem_kostprijs_opgeslagen
+        unit_of_measurement: "€/kWh"
+        icon: mdi:currency-eur
+        state: >
+          {% set kostprijs = states('input_number.accu_kostprijs_totaal') | float(0) %}
+          {% set kwh = states('sensor.accu_kwh_in_accu') | float(0) %}
+          {% if kwh > 0.05 %}
+            {{ (kostprijs / kwh) | round(4) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Accu Kostprijs Per kWh Uit"
+        unique_id: accu_kostprijs_per_kwh_uit
+        unit_of_measurement: "€/kWh"
+        icon: mdi:currency-eur
+        state: >
+          {% set gem = states('sensor.accu_gemiddelde_kostprijs_opgeslagen') | float(0) %}
+          {% set eff = states('sensor.zendure_2400_ac_efficientie_export_24u_gemiddelde') | float(88) %}
+          {% if eff > 50 %}
+            {{ (gem / (eff / 100)) | round(4) }}
+          {% else %}
+            {{ gem | round(4) }}
+          {% endif %}
+
+      - name: "Accu Marge Per kWh"
+        unique_id: accu_marge_per_kwh
+        unit_of_measurement: "€/kWh"
+        icon: mdi:cash
+        state: >
+          {% set prijs = states('sensor.dynamisch_nordpool') | float(0) %}
+          {% set kostprijs = states('sensor.accu_kostprijs_per_kwh_uit') | float(0) %}
+          {{ (prijs - kostprijs) | round(4) }}
+
+      - name: "Accu Marge Teruglevering"
+        unique_id: accu_marge_teruglevering
+        unit_of_measurement: "€/kWh"
+        icon: mdi:cash-minus
+        state: >
+          {% set teruglever = states('sensor.accu_teruglevertarief') | float(0) %}
+          {% set kostprijs = states('sensor.accu_kostprijs_per_kwh_uit') | float(0) %}
+          {{ (teruglever - kostprijs) | round(4) }}
+
+      - name: "Accu Laadkosten Per Moment"
+        unique_id: accu_laadkosten_per_moment
+        unit_of_measurement: "€/h"
+        state: >
+          {% set net = states('sensor.net_naar_accu') | float(0) %}
+          {% set pv = states('sensor.pv_vermogen_naar_batterij') | float(0) %}
+          {% set p_net = states('sensor.dynamisch_nordpool') | float(0) %}
+          {% set p_terug = states('sensor.accu_teruglevertarief') | float(0) %}
+          {{ (net / 1000 * p_net + pv / 1000 * p_terug) | round(6) }}
+
+      - name: "Accu Opbrengst Per Moment"
+        unique_id: accu_opbrengst_per_moment
+        unit_of_measurement: "€/h"
+        state: >
+          {% set huis = states('sensor.accu_naar_huis') | float(0) %}
+          {% set net = states('sensor.accu_naar_net') | float(0) %}
+          {% set p = states('sensor.dynamisch_nordpool') | float(0) %}
+          {{ ((huis + net) / 1000 * p) | round(6) }}
+
+      - name: "Accu Netto Besparing Per Moment"
+        unique_id: accu_netto_besparing_per_moment
+        unit_of_measurement: "€/h"
+        state: >
+          {% set opbrengst = states('sensor.accu_opbrengst_per_moment') | float(0) %}
+          {% set kosten = states('sensor.accu_laadkosten_per_moment') | float(0) %}
+          {{ (opbrengst - kosten) | round(6) }}
+
+      - name: "Accu Laadkosten Gecorrigeerd"
+        unique_id: accu_laadkosten_gecorrigeerd
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.accu_laadkosten_totaal') | float(0) - states('input_number.accu_laadkosten_offset') | float(0)) | round(4) }}
+
+      - name: "Accu Opbrengst Gecorrigeerd"
+        unique_id: accu_opbrengst_gecorrigeerd
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.accu_opbrengst_totaal') | float(0) - states('input_number.accu_opbrengst_offset') | float(0)) | round(4) }}
+
+      - name: "Accu Netto Besparing Vandaag"
+        unique_id: accu_netto_besparing_vandaag
+        unit_of_measurement: "€"
+        state: >
+          {% set opbrengst = states('sensor.accu_besparing_vandaag') | float(0) %}
+          {% set kosten = states('sensor.accu_laadkosten_vandaag') | float(0) %}
+          {{ (opbrengst - kosten) | round(4) }}
+
+      - name: "Accu Netto Besparing Gecorrigeerd"
+        unique_id: accu_netto_besparing_gecorrigeerd
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.accu_netto_besparing_totaal') | float(0) - states('input_number.accu_netto_besparing_offset') | float(0)) | round(4) }}
+
+      - name: "Accu Terugverdien Percentage"
+        unique_id: accu_terugverdien_percentage
+        unit_of_measurement: "%"
+        state: >
+          {% set totaal = states('sensor.accu_netto_besparing_gecorrigeerd') | float(0) %}
+          {% set aanschaf = states('input_number.accu_aanschafprijs') | float(0) %}
+          {{ ((totaal / aanschaf) * 100) | round(2) if aanschaf > 0 else 0 }}
+
+      - name: "Zendure Energie Inzicht Versie"
+        unique_id: zendure_energie_inzicht_versie
+        icon: mdi:tag
+        state: "v20260608-beta"
+
+##############################################################################
+# AUTOMATIONS
+##############################################################################
+
+automation:
+  - alias: "Accu Kostprijs Bijwerken"
+    id: accu_kostprijs_bijwerken
+    trigger:
+      - platform: time_pattern
+        minutes: "/1"
+    condition:
+      - condition: template
+        value_template: >
+          {{ states('sensor.zendure_2400_ac_laadpercentage') not in ['unknown', 'unavailable']
+             and states('sensor.net_naar_accu') not in ['unknown', 'unavailable'] }}
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_kostprijs_totaal
+        data:
+          value: >
+            {% set huidig = states('input_number.accu_kostprijs_totaal') | float(0) %}
+            {% set soc = states('sensor.zendure_2400_ac_laadpercentage') | float(0) %}
+            {% set min_soc = states('sensor.zendure_2400_ac_minimale_laadpercentage') | float(10) %}
+            {% if soc <= min_soc + 1 %}
+              0
+            {% else %}
+              {% set kwh_in_accu = states('sensor.accu_kwh_in_accu') | float(0) %}
+              {% set net_in_kw = states('sensor.net_naar_accu') | float(0) / 1000 %}
+              {% set pv_in_kw = states('sensor.pv_vermogen_naar_batterij') | float(0) / 1000 %}
+              {% set export_dc_kw = states('sensor.zendure_2400_ac_vermogen_export_dc') | float(0) / 1000 %}
+              {% set prijs = states('sensor.dynamisch_nordpool') | float(0) %}
+              {% set teruglever = states('sensor.accu_teruglevertarief') | float(0) %}
+              {% set dt = 1 / 60 %}
+              {% set kosten_in = (net_in_kw * prijs + pv_in_kw * teruglever) * dt %}
+              {% if kwh_in_accu > 0.1 %}
+                {% set gem_kostprijs = huidig / kwh_in_accu %}
+                {% set kosten_uit = export_dc_kw * gem_kostprijs * dt %}
+              {% else %}
+                {% set kosten_uit = 0 %}
+              {% endif %}
+              {{ [huidig + kosten_in - kosten_uit, 0] | max | round(6) }}
+            {% endif %}
+
+  - alias: "Accu Statistieken Reset"
+    id: accu_statistieken_reset
+    trigger:
+      - platform: state
+        entity_id: input_button.accu_statistieken_reset
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_kostprijs_totaal
+        data:
+          value: 0
+      - service: utility_meter.calibrate
+        target:
+          entity_id: sensor.accu_laadkosten_vandaag
+        data:
+          value: "0"
+      - service: utility_meter.calibrate
+        target:
+          entity_id: sensor.accu_besparing_vandaag
+        data:
+          value: "0" 
+
+  - alias: "Accu Terugverdien Reset"
+    id: accu_terugverdien_reset
+    trigger:
+      - platform: state
+        entity_id: input_button.accu_terugverdien_reset
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_laadkosten_offset
+        data:
+          value: "{{ states('sensor.accu_laadkosten_totaal') | float(0) }}"
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_opbrengst_offset
+        data:
+          value: "{{ states('sensor.accu_opbrengst_totaal') | float(0) }}"
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_netto_besparing_offset
+        data:
+          value: "{{ states('sensor.accu_netto_besparing_totaal') | float(0) }}"
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.accu_kostprijs_totaal
+        data:
+          value: 0
